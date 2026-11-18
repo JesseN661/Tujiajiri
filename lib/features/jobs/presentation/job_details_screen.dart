@@ -1,0 +1,132 @@
+import 'package:flutter/material.dart';
+
+import '../models/job.dart';
+
+class JobDetailsScreen extends StatelessWidget {
+  final Job job;
+
+  const JobDetailsScreen({super.key, required this.job});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Job Details')),
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    job.title,
+                    style: Theme.of(context).textTheme.headlineSmall
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+
+                  Text(
+                    job.employerName,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+
+                  _infoRow(Icons.location_on_outlined, job.location),
+                  _infoRow(Icons.work_outline, job.employmentType),
+                  _infoRow(Icons.school_outlined, job.experienceLevel),
+
+                  if (job.isVerified) ...[
+                    const SizedBox(height: 12),
+                    const Row(
+                      children: [
+                        Icon(Icons.verified, color: Colors.green),
+                        SizedBox(width: 8),
+                        Text('Verified employer'),
+                      ],
+                    ),
+                  ],
+
+                  const SizedBox(height: 28),
+
+                  Text(
+                    'Job Description',
+                    style: Theme.of(context).textTheme.titleLarge
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+
+                  Text(
+                    job.description.isEmpty
+                        ? 'No description provided yet.'
+                        : job.description,
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  Text(
+                    'Required Skills',
+                    style: Theme.of(context).textTheme.titleLarge
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+
+                  if (job.requiredSkills.isEmpty)
+                    const Text('No specific skills listed.')
+                  else
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: job.requiredSkills.map((skill) {
+                        return Chip(label: Text(skill));
+                      }).toList(),
+                    ),
+                ],
+              ),
+            ),
+          ),
+
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+              child: SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context)
+                      ..hideCurrentSnackBar()
+                      ..showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Application tracking will be connected '
+                            'when the application workflow is integrated.',
+                          ),
+                        ),
+                      );
+                  },
+                  icon: const Icon(Icons.send_outlined),
+                  label: const Text('Apply Now'),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _infoRow(IconData icon, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Icon(icon, size: 20),
+          const SizedBox(width: 8),
+          Expanded(child: Text(value)),
+        ],
+      ),
+    );
+  }
+}
