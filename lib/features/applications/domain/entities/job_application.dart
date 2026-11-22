@@ -12,6 +12,8 @@ class JobApplication extends Equatable {
     required this.appliedAt,
     required this.updatedAt,
     this.coverLetter = '',
+    this.jobTitle = '',
+    this.employerName = '',
   });
 
   final String id;
@@ -23,6 +25,25 @@ class JobApplication extends Equatable {
   final DateTime updatedAt;
   final String coverLetter;
 
+  /// Snapshot of the job when the user applied, so the tracker needs no extra reads.
+  final String jobTitle;
+  final String employerName;
+
+  JobApplication copyWith({ApplicationStatus? status, DateTime? updatedAt}) {
+    return JobApplication(
+      id: id,
+      jobId: jobId,
+      applicantId: applicantId,
+      employerId: employerId,
+      status: status ?? this.status,
+      appliedAt: appliedAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      coverLetter: coverLetter,
+      jobTitle: jobTitle,
+      employerName: employerName,
+    );
+  }
+
   @override
   List<Object?> get props => [
     id,
@@ -33,5 +54,7 @@ class JobApplication extends Equatable {
     appliedAt,
     updatedAt,
     coverLetter,
+    jobTitle,
+    employerName,
   ];
 }

@@ -12,6 +12,8 @@ class SubmitApplication {
     required String applicantId,
     required String employerId,
     String coverLetter = '',
+    String jobTitle = '',
+    String employerName = '',
   }) async {
     if (jobId.isEmpty || applicantId.isEmpty || employerId.isEmpty) {
       throw const ApplicationFailure('Missing job or user information.');
@@ -36,6 +38,8 @@ class SubmitApplication {
         appliedAt: now,
         updatedAt: now,
         coverLetter: coverLetter.trim(),
+        jobTitle: jobTitle,
+        employerName: employerName,
       ),
     );
   }

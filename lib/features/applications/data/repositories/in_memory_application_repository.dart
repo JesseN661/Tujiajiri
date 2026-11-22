@@ -53,15 +53,9 @@ class InMemoryApplicationRepository implements ApplicationRepository {
   ) async {
     final current = _items[applicationId];
     if (current == null) return;
-    _items[applicationId] = JobApplication(
-      id: current.id,
-      jobId: current.jobId,
-      applicantId: current.applicantId,
-      employerId: current.employerId,
+    _items[applicationId] = current.copyWith(
       status: status,
-      appliedAt: current.appliedAt,
       updatedAt: DateTime.now(),
-      coverLetter: current.coverLetter,
     );
     _changes.add(null);
   }
