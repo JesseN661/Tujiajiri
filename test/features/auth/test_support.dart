@@ -1,5 +1,9 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:tujiajiri/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:tujiajiri/features/auth/domain/auth_failure.dart';
 import 'package:tujiajiri/features/auth/domain/entities/app_user.dart';
 import 'package:tujiajiri/features/auth/domain/repositories/auth_repository.dart';
@@ -108,4 +112,28 @@ class FakeAuthRepository implements AuthRepository {
     _maybeFail();
     emitUser(null);
   }
+}
+
+/// Pumps [page] inside an app that provides an [AuthCubit] backed by a fake.
+///
+/// [size] is the logical screen size (defaults to a tall phone portrait).
+Future<FakeAuthRepository> pumpAuthPage(
+  WidgetTester tester,
+  Widget page, {
+  FakeAuthRepository? repository,
+  Size size = const Size(400, 900),
+}) async {
+  final repo = repository ?? FakeAuthRepository();
+  tester.view.physicalSize = size;
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
+
+  await tester.pumpWidget(
+    BlocProvider(
+      create: (_) => AuthCubit(repository: repo),
+      child: MaterialApp(home: page),
+    ),
+  );
+  await tester.pump();
+  return repo;
 }
