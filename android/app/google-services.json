@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "525297233532",
+    "project_id": "tujiajiri-80112",
+    "storage_bucket": "tujiajiri-80112.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:525297233532:android:44c0daaa1f42899735a3f9",
+        "android_client_info": {
+          "package_name": "com.example.tujiajiri"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBiC1dp-RpDHTKZBdcnHaiCZt034ytAh64"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
