@@ -6,12 +6,19 @@ import '../bloc/applications_cubit.dart';
 import '../bloc/applications_state.dart';
 import '../widgets/application_card.dart';
 
-/// The Tracker tab. Expects an [ApplicationsCubit] above it in the tree.
-class ApplicationsPage extends StatelessWidget {
-  const ApplicationsPage({super.key, required this.jobTitleFor});
+class ApplicationsPage extends StatefulWidget {
+  const ApplicationsPage({super.key});
 
-  /// Supplied by the jobs feature later (job title for a job id).
-  final String Function(String jobId) jobTitleFor;
+  @override
+  State<ApplicationsPage> createState() => _ApplicationsPageState();
+}
+
+class _ApplicationsPageState extends State<ApplicationsPage> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<ApplicationsCubit>().watch();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,7 +73,9 @@ class ApplicationsPage extends StatelessWidget {
                       itemCount: state.applications.length,
                       itemBuilder: (context, index) {
                         final application = state.applications[index];
-                        final title = jobTitleFor(application.jobId);
+                        final title = application.jobTitle.isEmpty
+                            ? 'Job application'
+                            : application.jobTitle;
                         return ApplicationCard(
                           application: application,
                           jobTitle: title,

@@ -13,13 +13,12 @@ import 'applications_state.dart';
 
 class ApplicationsCubit extends Cubit<ApplicationsState> {
   ApplicationsCubit({
-    required ApplicationRepository repository,
+    required this._repository,
     required SubmitApplication submitApplication,
     required UpdateApplicationStatus updateApplicationStatus,
     required WithdrawApplication withdrawApplication,
-    required this.userId,
-  }) : _repository = repository,
-       _submit = submitApplication,
+    required this.currentUserId,
+  }) : _submit = submitApplication,
        _updateStatus = updateApplicationStatus,
        _withdraw = withdrawApplication,
        super(const ApplicationsState());
@@ -30,7 +29,7 @@ class ApplicationsCubit extends Cubit<ApplicationsState> {
   final WithdrawApplication _withdraw;
 
   /// The signed-in user's id (comes from authentication).
-  final String userId;
+  final String Function() currentUserId;
 
   StreamSubscription<List<JobApplication>>? _subscription;
 
@@ -39,7 +38,7 @@ class ApplicationsCubit extends Cubit<ApplicationsState> {
     _subscription?.cancel();
     emit(state.copyWith(status: ApplicationsStatus.loading));
     _subscription = _repository
-        .watchApplicantApplications(userId)
+        .watchApplicantApplications(currentUserId())
         .listen(
           (applications) => emit(
             state.copyWith(
@@ -56,22 +55,33 @@ class ApplicationsCubit extends Cubit<ApplicationsState> {
         );
   }
 
-  Future<void> submit({
+  /// Returns null on success, or a user-friendly error message.
+  Future<String?> submit({
     required String jobId,
     required String employerId,
+    String jobTitle = '',
+    String employerName = '',
     String coverLetter = '',
-  }) => _run(
-    () => _submit(
-      jobId: jobId,
-      applicantId: userId,
-      employerId: employerId,
-      coverLetter: coverLetter,
-    ),
-    success: 'Application submitted.',
-  );
+  }) async {
+    try {
+      await _submit(
+        jobId: jobId,
+        applicantId: currentUserId(),
+        employerId: employerId,
+        coverLetter: coverLetter,
+        jobTitle: jobTitle,
+        employerName: employerName,
+      );
+      return null;
+    } on ApplicationFailure catch (e) {
+      return e.message;
+    } catch (_) {
+      return 'Something went wrong. Please try again.';
+    }
+  }
 
   Future<void> withdraw(JobApplication application) => _run(
-    () => _withdraw(application, userId),
+    () => _withdraw(application, currentUserId()),
     success: 'Application withdrawn.',
   );
 

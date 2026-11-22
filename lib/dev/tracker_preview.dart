@@ -7,9 +7,13 @@ import 'package:tujiajiri/features/applications/domain/usecases/submit_applicati
 import 'package:tujiajiri/features/applications/domain/usecases/update_application_status.dart';
 import 'package:tujiajiri/features/applications/domain/usecases/withdraw_application.dart';
 import 'package:tujiajiri/features/applications/presentation/bloc/applications_cubit.dart';
+import 'package:tujiajiri/features/applications/presentation/bloc/employer_applications_cubit.dart';
 import 'package:tujiajiri/features/applications/presentation/pages/applications_page.dart';
+import 'package:tujiajiri/features/applications/presentation/pages/apply_page.dart';
+import 'package:tujiajiri/features/applications/presentation/pages/employer_applications_page.dart';
 
 const _userId = 'demo-user';
+const _employerId = 'employer-1';
 
 const _titles = {
   'j1': 'Customer Support Agent',
@@ -24,10 +28,12 @@ JobApplication _seed(String jobId, ApplicationStatus status, int daysAgo) {
     id: '${jobId}_$_userId',
     jobId: jobId,
     applicantId: _userId,
-    employerId: 'employer-1',
+    employerId: _employerId,
     status: status,
     appliedAt: applied,
     updatedAt: applied,
+    jobTitle: _titles[jobId] ?? jobId,
+    employerName: 'Demo Employer',
   );
 }
 
@@ -53,24 +59,67 @@ class TrackerPreview extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
       ),
-      home: BlocProvider(
-        create: (_) => ApplicationsCubit(
-          repository: repository,
-          submitApplication: SubmitApplication(repository),
-          updateApplicationStatus: UpdateApplicationStatus(repository),
-          withdrawApplication: WithdrawApplication(repository),
-          userId: _userId,
-        )..watch(),
-        child: Scaffold(
-          appBar: AppBar(title: const Text('My applications')),
-          body: ApplicationsPage(jobTitleFor: (id) => _titles[id] ?? id),
-          floatingActionButton: FloatingActionButton.extended(
-            onPressed: () => repository.updateStatus(
-              'j1_$_userId',
-              ApplicationStatus.underReview,
+      builder: (context, child) => MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create: (_) => ApplicationsCubit(
+              repository: repository,
+              submitApplication: SubmitApplication(repository),
+              updateApplicationStatus: UpdateApplicationStatus(repository),
+              withdrawApplication: WithdrawApplication(repository),
+              currentUserId: () => _userId,
             ),
-            label: const Text('Simulate employer review'),
           ),
+          BlocProvider(
+            create: (_) => EmployerApplicationsCubit(
+              repository: repository,
+              updateApplicationStatus: UpdateApplicationStatus(repository),
+              currentUserId: () => _employerId,
+            ),
+          ),
+        ],
+        child: child!,
+      ),
+      home: const _PreviewHome(),
+    );
+  }
+}
+
+class _PreviewHome extends StatelessWidget {
+  const _PreviewHome();
+
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Tracker preview'),
+          actions: [
+            IconButton(
+              tooltip: 'Apply for a job',
+              icon: const Icon(Icons.add),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const ApplyPage(
+                    jobId: 'j5',
+                    jobTitle: 'Marketing Intern',
+                    employerId: _employerId,
+                    employerName: 'Demo Employer',
+                  ),
+                ),
+              ),
+            ),
+          ],
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'My applications'),
+              Tab(text: 'Employer view'),
+            ],
+          ),
+        ),
+        body: const TabBarView(
+          children: [ApplicationsPage(), EmployerApplicationsPage()],
         ),
       ),
     );
