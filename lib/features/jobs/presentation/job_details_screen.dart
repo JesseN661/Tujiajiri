@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../applications/presentation/pages/apply_page.dart';
 import '../models/job.dart';
 
 class JobDetailsScreen extends StatelessWidget {
@@ -95,16 +96,16 @@ class JobDetailsScreen extends StatelessWidget {
                 width: double.infinity,
                 child: FilledButton.icon(
                   onPressed: () {
-                    ScaffoldMessenger.of(context)
-                      ..hideCurrentSnackBar()
-                      ..showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Application tracking will be connected '
-                            'when the application workflow is integrated.',
-                          ),
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => ApplyPage(
+                          jobId: job.id,
+                          jobTitle: job.title,
+                          employerId: job.employerId,
+                          employerName: job.employerName,
                         ),
-                      );
+                      ),
+                    );
                   },
                   icon: const Icon(Icons.send_outlined),
                   label: const Text('Apply Now'),
