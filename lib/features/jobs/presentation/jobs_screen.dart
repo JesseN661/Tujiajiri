@@ -1,3 +1,4 @@
+import '../../profile/presentation/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -49,14 +50,27 @@ class _JobsScreenState extends State<JobsScreen> {
           'Find Jobs',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        actions: [
-          if (searchQuery.isNotEmpty || selectedType != 'All')
-            IconButton(
-              tooltip: 'Clear search and filters',
-              icon: const Icon(Icons.filter_alt_off),
-              onPressed: _clearFilters,
-            ),
-        ],
+       actions: [
+  IconButton(
+    icon: const Icon(Icons.person),
+    tooltip: 'My Profile',
+    onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const ProfileScreen(),
+        ),
+      );
+    },
+  ),
+  if (searchQuery.isNotEmpty || selectedType != 'All')
+    IconButton(
+      tooltip: 'Clear search and filters',
+      icon: const Icon(Icons.filter_alt_off),
+      onPressed: _clearFilters,
+    ),
+],
+            
       ),
       body: Column(
         children: [
