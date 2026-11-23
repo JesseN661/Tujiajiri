@@ -23,6 +23,34 @@ class ProfileMapper {
     );
   }
 
+  static Education educationFromDoc(
+    QueryDocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final data = doc.data();
+    return Education(
+      id: doc.id,
+      school: data['school'] as String? ?? '',
+      degree: data['degree'] as String? ?? '',
+      fieldOfStudy: data['fieldOfStudy'] as String? ?? '',
+      startYear: (data['startYear'] as num?)?.toInt() ?? 0,
+      endYear: (data['endYear'] as num?)?.toInt(),
+    );
+  }
+
+  static Experience experienceFromDoc(
+    QueryDocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final data = doc.data();
+    return Experience(
+      id: doc.id,
+      company: data['company'] as String? ?? '',
+      role: data['role'] as String? ?? '',
+      startYear: (data['startYear'] as num?)?.toInt() ?? 0,
+      endYear: (data['endYear'] as num?)?.toInt(),
+      description: data['description'] as String? ?? '',
+    );
+  }
+
   /// Timestamps are added by the repository, not here.
   static Map<String, dynamic> profileToMap(UserProfile profile) => {
     'fullName': profile.fullName,

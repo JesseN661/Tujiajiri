@@ -4,6 +4,7 @@ import '../../../auth/domain/entities/app_user.dart';
 import '../../domain/entities/education.dart';
 import '../../domain/entities/experience.dart';
 import '../../domain/entities/user_profile.dart';
+import '../../domain/entry_id.dart';
 import '../../domain/repositories/user_profile_repository.dart';
 import '../../domain/validators/profile_validators.dart';
 import 'onboarding_state.dart';
@@ -20,10 +21,8 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   final UserProfileRepository _repository;
   final AppUser _user;
 
-  int _idCounter = 0;
-
   /// Unique id for a new education or experience entry (becomes a doc id).
-  String newId() => '${DateTime.now().microsecondsSinceEpoch}-${_idCounter++}';
+  String newId() => newEntryId();
 
   /// Checks Firestore: a finished profile skips onboarding on every launch.
   Future<void> load() async {

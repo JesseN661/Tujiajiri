@@ -14,4 +14,18 @@ abstract class UserProfileRepository {
     required List<Education> education,
     required List<Experience> experience,
   });
+
+  /// Live updates, so the screen changes as soon as a write happens.
+  Stream<UserProfile?> watchProfile(String uid);
+  Stream<List<Education>> watchEducation(String uid);
+  Stream<List<Experience>> watchExperience(String uid);
+
+  /// Updates the personal details of an existing profile.
+  Future<void> updateProfile(UserProfile profile);
+
+  /// Adds the entry, or replaces the one with the same id.
+  Future<void> saveEducation(String uid, Education item);
+  Future<void> deleteEducation(String uid, String id);
+  Future<void> saveExperience(String uid, Experience item);
+  Future<void> deleteExperience(String uid, String id);
 }

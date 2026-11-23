@@ -56,4 +56,58 @@ class FirestoreUserProfileRepository implements UserProfileRepository {
     }
     await batch.commit();
   }
+
+  CollectionReference<Map<String, dynamic>> _education(String uid) =>
+      _userDoc(uid).collection('education');
+
+  CollectionReference<Map<String, dynamic>> _experience(String uid) =>
+      _userDoc(uid).collection('experience');
+
+  @override
+  Stream<UserProfile?> watchProfile(String uid) =>
+      _userDoc(uid)
+          .snapshots()
+          .map((doc) => doc.exists ? ProfileMapper.profileFromDoc(doc) : null);
+
+  // Newest first, sorted on the device so no composite index is needed.
+  @override
+  Stream<List<Education>> watchEducation(String uid) =>
+      _education(uid).snapshots().map(
+        (snapshot) =>
+            snapshot.docs.map(ProfileMapper.educationFromDoc).toList()
+              ..sort((a, b) => b.startYear.compareTo(a.startYear)),
+      );
+
+  @override
+  Stream<List<Experience>> watchExperience(String uid) =>
+      _experience(uid).snapshots().map(
+        (snapshot) =>
+            snapshot.docs.map(ProfileMapper.experienceFromDoc).toList()
+              ..sort((a, b) => b.startYear.compareTo(a.startYear)),
+      );
+
+  @override
+  Future<void> updateProfile(UserProfile profile) => _userDoc(profile.uid).set({
+    // Only editable fields: never touches email or onboardingComplete.
+    'fullName': profile.fullName,
+    'phone': profile.phone,
+    'location': profile.location,
+    'updatedAt': FieldValue.serverTimestamp(),
+  }, SetOptions(merge: true));
+
+  @override
+  Future<void> saveEducation(String uid, Education item) =>
+      _education(uid).doc(item.id).set(ProfileMapper.educationToMap(item));
+
+  @override
+  Future<void> deleteEducation(String uid, String id) =>
+      _education(uid).doc(id).delete();
+
+  @override
+  Future<void> saveExperience(String uid, Experience item) =>
+      _experience(uid).doc(item.id).set(ProfileMapper.experienceToMap(item));
+
+  @override
+  Future<void> deleteExperience(String uid, String id) =>
+      _experience(uid).doc(id).delete();
 }

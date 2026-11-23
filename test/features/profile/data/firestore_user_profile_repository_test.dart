@@ -110,4 +110,92 @@ void main() {
     expect(doc.data()?['createdAt'], first);
     expect(doc.data()?['location'], 'Huye');
   });
+
+  group('after onboarding', () {
+    Future<void> seed() => repository.saveOnboarding(
+      profile: _profile,
+      education: const [_education],
+      experience: const [_experience],
+    );
+
+    test('watchProfile and watchEducation stream the saved data', () async {
+      await seed();
+
+      expect(
+        await repository.watchProfile('u1').first,
+        _profile.copyWith(onboardingComplete: true),
+      );
+      expect(await repository.watchEducation('u1').first, [_education]);
+      expect(await repository.watchExperience('u1').first, [_experience]);
+    });
+
+    test('updateProfile changes personal details only', () async {
+      await seed();
+
+      await repository.updateProfile(
+        _profile.copyWith(phone: '0788000111', location: 'Huye'),
+      );
+
+      final doc = await firestore.collection('users').doc('u1').get();
+      expect(doc.data()?['phone'], '0788000111');
+      expect(doc.data()?['location'], 'Huye');
+      expect(doc.data()?['email'], 'amina@example.com');
+      expect(doc.data()?['onboardingComplete'], isTrue);
+    });
+
+    test('saveEducation adds and edits an entry', () async {
+      await seed();
+      const extra = Education(
+        id: 'e2',
+        school: 'Uni',
+        degree: 'Degree',
+        startYear: 2023,
+      );
+
+      await repository.saveEducation('u1', extra);
+      await repository.saveEducation(
+        'u1',
+        const Education(
+          id: 'e2',
+          school: 'University of Rwanda',
+          degree: 'Degree',
+          startYear: 2023,
+        ),
+      );
+
+      final items = await repository.watchEducation('u1').first;
+      expect(items.map((e) => e.id), ['e2', 'e1']);
+      expect(items.first.school, 'University of Rwanda');
+      expect(items.first.endYear, isNull);
+    });
+
+    test('deleteEducation and deleteExperience remove the entries', () async {
+      await seed();
+
+      await repository.deleteEducation('u1', 'e1');
+      await repository.deleteExperience('u1', 'x1');
+
+      expect(await repository.watchEducation('u1').first, isEmpty);
+      expect(await repository.watchExperience('u1').first, isEmpty);
+    });
+
+    test('saveExperience adds an entry', () async {
+      await seed();
+
+      await repository.saveExperience(
+        'u1',
+        const Experience(
+          id: 'x2',
+          company: 'Cafe',
+          role: 'Waiter',
+          startYear: 2024,
+          endYear: 2025,
+        ),
+      );
+
+      final items = await repository.watchExperience('u1').first;
+      expect(items.map((e) => e.id), ['x2', 'x1']);
+      expect(items.first.endYear, 2025);
+    });
+  });
 }
