@@ -1,3 +1,4 @@
+import '../../auth/presentation/bloc/auth_cubit.dart';
 import '../../profile/presentation/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -62,6 +63,12 @@ class _JobsScreenState extends State<JobsScreen> {
         ),
       );
     },
+  ),
+  // Log out: ends the Firebase session and returns to the login page.
+  IconButton(
+    icon: const Icon(Icons.logout),
+    tooltip: 'Log out',
+    onPressed: () => context.read<AuthCubit>().signOut(),
   ),
   if (searchQuery.isNotEmpty || selectedType != 'All')
     IconButton(
