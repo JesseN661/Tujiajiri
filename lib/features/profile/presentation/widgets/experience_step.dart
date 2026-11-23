@@ -5,7 +5,7 @@ import '../../domain/entities/experience.dart';
 import '../bloc/onboarding_cubit.dart';
 import '../bloc/onboarding_state.dart';
 import 'entry_card.dart';
-import 'experience_form_sheet.dart';
+import 'entry_sheets.dart';
 import 'step_navigation.dart';
 
 /// Step 3: add, edit and remove work experience (optional), then finish.
@@ -14,14 +14,10 @@ class ExperienceStep extends StatelessWidget {
 
   Future<void> _openForm(BuildContext context, [Experience? initial]) async {
     final cubit = context.read<OnboardingCubit>();
-    final result = await showModalBottomSheet<Experience>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (_) => ExperienceFormSheet(
-        id: initial?.id ?? cubit.newId(),
-        initial: initial,
-      ),
+    final result = await showExperienceSheet(
+      context,
+      id: initial?.id ?? cubit.newId(),
+      initial: initial,
     );
     if (result != null) cubit.saveExperience(result);
   }

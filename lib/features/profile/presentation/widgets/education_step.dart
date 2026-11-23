@@ -4,8 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/entities/education.dart';
 import '../bloc/onboarding_cubit.dart';
 import '../bloc/onboarding_state.dart';
-import 'education_form_sheet.dart';
 import 'entry_card.dart';
+import 'entry_sheets.dart';
 import 'step_navigation.dart';
 
 /// Step 2: add, edit and remove education entries (optional).
@@ -14,14 +14,10 @@ class EducationStep extends StatelessWidget {
 
   Future<void> _openForm(BuildContext context, [Education? initial]) async {
     final cubit = context.read<OnboardingCubit>();
-    final result = await showModalBottomSheet<Education>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (_) => EducationFormSheet(
-        id: initial?.id ?? cubit.newId(),
-        initial: initial,
-      ),
+    final result = await showEducationSheet(
+      context,
+      id: initial?.id ?? cubit.newId(),
+      initial: initial,
     );
     if (result != null) cubit.saveEducation(result);
   }
