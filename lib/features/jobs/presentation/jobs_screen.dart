@@ -1,16 +1,18 @@
 import '../../auth/presentation/bloc/auth_cubit.dart';
-import '../../profile/presentation/profile_screen.dart';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../data/job_repository.dart';
-import '../models/job.dart';
-import '../state/job_search_controller.dart';
+import '../domain/entities/job.dart';
 import 'job_details_screen.dart';
+import 'job_form_screen.dart';
+import 'state/job_search_controller.dart';
 
 class JobsScreen extends StatefulWidget {
-  const JobsScreen({super.key});
+  const JobsScreen({super.key, this.canPostJobs = false});
+
+  final bool canPostJobs;
 
   @override
   State<JobsScreen> createState() => _JobsScreenState();
@@ -31,6 +33,24 @@ class _JobsScreenState extends State<JobsScreen> {
   void _clearFilters() {
     _searchTextController.clear();
     context.read<JobSearchController>().clearFilters();
+  }
+
+  void _postJob() {
+    final user = context.read<AuthCubit>().state.user;
+    if (user == null) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => JobFormScreen(
+          employerId: user.uid,
+          employerName: user.displayName.isEmpty
+              ? user.email
+              : user.displayName,
+          repository: _repository,
+        ),
+      ),
+    );
   }
 
   @override
@@ -54,16 +74,6 @@ class _JobsScreenState extends State<JobsScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.person),
-            tooltip: 'My Profile',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ProfileScreen()),
-              );
-            },
-          ),
-          IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Log out',
             onPressed: () => context.read<AuthCubit>().signOut(),
@@ -76,6 +86,13 @@ class _JobsScreenState extends State<JobsScreen> {
             ),
         ],
       ),
+      floatingActionButton: widget.canPostJobs
+          ? FloatingActionButton.extended(
+              onPressed: _postJob,
+              icon: const Icon(Icons.add),
+              label: const Text('Post a job'),
+            )
+          : null,
       body: Column(
         children: [
           // Search field
@@ -250,7 +267,10 @@ class _JobsScreenState extends State<JobsScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => JobDetailsScreen(job: job),
+                              builder: (context) => JobDetailsScreen(
+                                job: job,
+                                repository: _repository,
+                              ),
                             ),
                           );
                         },

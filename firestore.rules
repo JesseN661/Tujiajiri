@@ -71,7 +71,13 @@ service cloud.firestore {
         && data.email.lower() == request.auth.token.email.lower()
         && data.onboardingComplete is bool
         && (!('phone' in data) || validText(data.phone, 0, 25))
-        && (!('location' in data) || validText(data.location, 0, 60));
+        && (!('location' in data) || validText(data.location, 0, 60))
+        && (!('skills' in data) || validList(data.skills))
+        && (!('interests' in data) || validList(data.interests));
+    }
+
+    function validList(value) {
+      return value is list && value.size() <= 50;
     }
 
     function validEducation(data) {

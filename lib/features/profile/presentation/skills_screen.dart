@@ -1,30 +1,51 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-class SkillsScreen extends StatefulWidget {
+import '../../auth/presentation/bloc/auth_cubit.dart';
+import '../domain/repositories/user_profile_repository.dart';
+import 'bloc/skills_cubit.dart';
+import 'bloc/skills_state.dart';
+
+class SkillsScreen extends StatelessWidget {
   const SkillsScreen({super.key});
 
   @override
-  State<SkillsScreen> createState() => _SkillsScreenState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => SkillsCubit(
+        repository: context.read<UserProfileRepository>(),
+        uid: context.read<AuthCubit>().state.user?.uid ?? '',
+      )..load(),
+      child: const _SkillsView(),
+    );
+  }
 }
 
-class _SkillsScreenState extends State<SkillsScreen> {
-  final TextEditingController skillController = TextEditingController();
+class _SkillsView extends StatefulWidget {
+  const _SkillsView();
 
-  List<String> skills = [];
-  List<String> interests = [];
+  @override
+  State<_SkillsView> createState() => _SkillsViewState();
+}
+
+class _SkillsViewState extends State<_SkillsView> {
+  final TextEditingController skillController = TextEditingController();
+  final TextEditingController interestController = TextEditingController();
 
   void addSkill() {
-    if (skillController.text.trim().isNotEmpty) {
-      setState(() {
-        skills.add(skillController.text.trim());
-        skillController.clear();
-      });
-    }
+    context.read<SkillsCubit>().addSkill(skillController.text);
+    skillController.clear();
+  }
+
+  void addInterest() {
+    context.read<SkillsCubit>().addInterest(interestController.text);
+    interestController.clear();
   }
 
   @override
   void dispose() {
     skillController.dispose();
+    interestController.dispose();
     super.dispose();
   }
 
@@ -37,74 +58,82 @@ class _SkillsScreenState extends State<SkillsScreen> {
         backgroundColor: const Color(0xFF0D103D),
         foregroundColor: Colors.white,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'My Skills',
-              style: TextStyle(color: Colors.white, fontSize: 20),
-            ),
-            TextField(
-              controller: skillController,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: 'Enter a skill',
-                hintStyle: const TextStyle(color: Colors.white70),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.add, color: Colors.white),
-                  onPressed: addSkill,
+      body: BlocConsumer<SkillsCubit, SkillsState>(
+        listener: (context, state) {
+          if (state.error != null) {
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(state.error!)));
+          }
+        },
+        builder: (context, state) {
+          if (state.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final cubit = context.read<SkillsCubit>();
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'My Skills',
+                  style: TextStyle(color: Colors.white, fontSize: 20),
                 ),
-              ),
+                TextField(
+                  controller: skillController,
+                  style: const TextStyle(color: Colors.white),
+                  onSubmitted: (_) => addSkill(),
+                  decoration: InputDecoration(
+                    hintText: 'Enter a skill',
+                    hintStyle: const TextStyle(color: Colors.white70),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.add, color: Colors.white),
+                      onPressed: addSkill,
+                    ),
+                  ),
+                ),
+                Wrap(
+                  spacing: 8,
+                  children: state.skills.map((skill) {
+                    return Chip(
+                      label: Text(skill),
+                      onDeleted: () => cubit.removeSkill(skill),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 30),
+                const Text(
+                  'My Interests',
+                  style: TextStyle(color: Colors.white, fontSize: 20),
+                ),
+                TextField(
+                  controller: interestController,
+                  style: const TextStyle(color: Colors.white),
+                  onSubmitted: (_) => addInterest(),
+                  decoration: InputDecoration(
+                    hintText: 'Add your interests',
+                    hintStyle: const TextStyle(color: Colors.white70),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.add, color: Colors.white),
+                      onPressed: addInterest,
+                    ),
+                  ),
+                ),
+                Wrap(
+                  spacing: 8,
+                  children: state.interests.map((interest) {
+                    return Chip(
+                      label: Text(interest),
+                      onDeleted: () => cubit.removeInterest(interest),
+                    );
+                  }).toList(),
+                ),
+              ],
             ),
-            Wrap(
-              spacing: 8,
-              children: skills.map((skill) {
-                return Chip(
-                  label: Text(skill),
-                  onDeleted: () {
-                    setState(() {
-                      skills.remove(skill);
-                    });
-                  },
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 30),
-            const Text(
-              'My Interests',
-              style: TextStyle(color: Colors.white, fontSize: 20),
-            ),
-            TextField(
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                hintText: 'Add your interests',
-                hintStyle: TextStyle(color: Colors.white70),
-              ),
-              onSubmitted: (value) {
-                if (value.trim().isNotEmpty) {
-                  setState(() {
-                    interests.add(value.trim());
-                  });
-                }
-              },
-            ),
-            Wrap(
-              spacing: 8,
-              children: interests.map((interest) {
-                return Chip(
-                  label: Text(interest),
-                  onDeleted: () {
-                    setState(() {
-                      interests.remove(interest);
-                    });
-                  },
-                );
-              }).toList(),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

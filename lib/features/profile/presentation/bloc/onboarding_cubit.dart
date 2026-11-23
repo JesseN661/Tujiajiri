@@ -11,12 +11,8 @@ import 'onboarding_state.dart';
 
 /// Loads the profile, runs the three onboarding steps and saves the result.
 class OnboardingCubit extends Cubit<OnboardingState> {
-  OnboardingCubit({
-    required UserProfileRepository repository,
-    required AppUser user,
-  }) : _repository = repository,
-       _user = user,
-       super(const OnboardingState());
+  OnboardingCubit({required this._repository, required this._user})
+    : super(const OnboardingState());
 
   final UserProfileRepository _repository;
   final AppUser _user;

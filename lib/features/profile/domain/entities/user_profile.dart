@@ -9,6 +9,8 @@ class UserProfile extends Equatable {
     this.phone = '',
     this.location = '',
     this.onboardingComplete = false,
+    this.skills = const [],
+    this.interests = const [],
   });
 
   final String uid;
@@ -20,11 +22,16 @@ class UserProfile extends Equatable {
   /// False until the user finishes the onboarding steps.
   final bool onboardingComplete;
 
+  final List<String> skills;
+  final List<String> interests;
+
   UserProfile copyWith({
     String? fullName,
     String? phone,
     String? location,
     bool? onboardingComplete,
+    List<String>? skills,
+    List<String>? interests,
   }) {
     return UserProfile(
       uid: uid,
@@ -33,6 +40,8 @@ class UserProfile extends Equatable {
       phone: phone ?? this.phone,
       location: location ?? this.location,
       onboardingComplete: onboardingComplete ?? this.onboardingComplete,
+      skills: skills ?? this.skills,
+      interests: interests ?? this.interests,
     );
   }
 
@@ -44,5 +53,7 @@ class UserProfile extends Equatable {
     phone,
     location,
     onboardingComplete,
+    skills,
+    interests,
   ];
 }

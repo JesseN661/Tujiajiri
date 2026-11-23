@@ -23,6 +23,12 @@ abstract class UserProfileRepository {
   /// Updates the personal details of an existing profile.
   Future<void> updateProfile(UserProfile profile);
 
+  Future<void> saveSkills(
+    String uid, {
+    required List<String> skills,
+    required List<String> interests,
+  });
+
   /// Adds the entry, or replaces the one with the same id.
   Future<void> saveEducation(String uid, Education item);
   Future<void> deleteEducation(String uid, String id);

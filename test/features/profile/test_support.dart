@@ -98,6 +98,17 @@ class FakeProfileRepository implements UserProfileRepository {
   }
 
   @override
+  Future<void> saveSkills(
+    String uid, {
+    required List<String> skills,
+    required List<String> interests,
+  }) async {
+    _guard();
+    savedProfile = _profile?.copyWith(skills: skills, interests: interests);
+    _changes.add(null);
+  }
+
+  @override
   Future<void> saveEducation(String uid, Education item) async {
     _guard();
     savedEducation = [

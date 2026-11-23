@@ -96,6 +96,17 @@ class FirestoreUserProfileRepository implements UserProfileRepository {
   }, SetOptions(merge: true));
 
   @override
+  Future<void> saveSkills(
+    String uid, {
+    required List<String> skills,
+    required List<String> interests,
+  }) => _userDoc(uid).set({
+    'skills': skills,
+    'interests': interests,
+    'updatedAt': FieldValue.serverTimestamp(),
+  }, SetOptions(merge: true));
+
+  @override
   Future<void> saveEducation(String uid, Education item) =>
       _education(uid).doc(item.id).set(ProfileMapper.educationToMap(item));
 
