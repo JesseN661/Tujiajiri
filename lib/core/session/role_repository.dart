@@ -8,8 +8,7 @@ class RoleRepository {
 
   final FirebaseFirestore _firestore;
 
-  /// Emits the user's role, and again whenever an admin changes it.
-  /// A user with no profile document yet is treated as a seeker.
+  /// Emits the user's role (seeker if there is no profile).
   Stream<UserRole> watchRole(String uid) => _firestore
       .collection('users')
       .doc(uid)

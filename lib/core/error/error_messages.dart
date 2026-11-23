@@ -2,12 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 
 import 'failure.dart';
 
-/// Turns any error into a short message a user can act on.
-///
-/// - A [Failure] already carries a user-facing message.
-/// - Firebase errors (Auth and Firestore) are mapped by their `code`, so users
-///   never see raw text such as `[firebase_auth/invalid-credential]`.
-/// - Anything else gets a generic message.
+/// Turns any error into a short, friendly message.
 String friendlyMessage(Object error) {
   if (error is Failure) return error.message;
   if (error is FirebaseException) {

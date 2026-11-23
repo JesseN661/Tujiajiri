@@ -4,14 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'app_destination.dart';
 import 'navigation_cubit.dart';
 
-/// The app's main frame after sign-in: one page per [AppDestination].
-///
-/// - Portrait / narrow screens: a bottom [NavigationBar].
-/// - Landscape / wide screens (600 dp and up): a side [NavigationRail], so the
-///   tabs do not take vertical space when the phone is rotated.
-/// - Pages are kept alive in an [IndexedStack], so switching tabs keeps each
-///   page's scroll position and search text.
-/// - The system back button returns to the first tab before leaving the app.
+/// Main tabs: bottom bar in portrait, side rail in landscape.
 class HomeShell extends StatelessWidget {
   const HomeShell({super.key, required this.destinations});
 
