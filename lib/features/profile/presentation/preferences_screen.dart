@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -53,8 +51,10 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
         child: Column(
           children: [
             SwitchListTile(
-              title: const Text('Dark Mode',
-                  style: TextStyle(color: Colors.white)),
+              title: const Text(
+                'Dark Mode',
+                style: TextStyle(color: Colors.white),
+              ),
               value: darkMode,
               onChanged: (value) {
                 setState(() {
@@ -64,8 +64,10 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
               },
             ),
             SwitchListTile(
-              title: const Text('Notifications',
-                  style: TextStyle(color: Colors.white)),
+              title: const Text(
+                'Notifications',
+                style: TextStyle(color: Colors.white),
+              ),
               value: notifications,
               onChanged: (value) {
                 setState(() {
@@ -75,17 +77,18 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
               },
             ),
             const SizedBox(height: 20),
-            const Text('Preferred Job Sorting',
-                style: TextStyle(color: Colors.white, fontSize: 18)),
+            const Text(
+              'Preferred Job Sorting',
+              style: TextStyle(color: Colors.white, fontSize: 18),
+            ),
             DropdownButton<String>(
               value: jobSorting,
               dropdownColor: const Color(0xFF0D103D),
               style: const TextStyle(color: Colors.white),
               items: ['Newest', 'Oldest', 'A-Z']
-                  .map((item) => DropdownMenuItem(
-                        value: item,
-                        child: Text(item),
-                      ))
+                  .map(
+                    (item) => DropdownMenuItem(value: item, child: Text(item)),
+                  )
                   .toList(),
               onChanged: (value) {
                 if (value != null) {

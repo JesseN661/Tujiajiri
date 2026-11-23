@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 class SkillsScreen extends StatefulWidget {
@@ -43,8 +42,10 @@ class _SkillsScreenState extends State<SkillsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('My Skills',
-                style: TextStyle(color: Colors.white, fontSize: 20)),
+            const Text(
+              'My Skills',
+              style: TextStyle(color: Colors.white, fontSize: 20),
+            ),
             TextField(
               controller: skillController,
               style: const TextStyle(color: Colors.white),
@@ -71,8 +72,10 @@ class _SkillsScreenState extends State<SkillsScreen> {
               }).toList(),
             ),
             const SizedBox(height: 30),
-            const Text('My Interests',
-                style: TextStyle(color: Colors.white, fontSize: 20)),
+            const Text(
+              'My Interests',
+              style: TextStyle(color: Colors.white, fontSize: 20),
+            ),
             TextField(
               style: const TextStyle(color: Colors.white),
               decoration: const InputDecoration(

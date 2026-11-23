@@ -1,7 +1,6 @@
-
-
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'skills_screen.dart';
 import 'preferences_screen.dart';
 
@@ -47,9 +46,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Profile saved successfully!'),
-      ),
+      const SnackBar(content: Text('Profile saved successfully!')),
     );
   }
 

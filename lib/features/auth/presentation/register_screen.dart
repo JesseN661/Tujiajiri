@@ -1,5 +1,5 @@
-
 import 'package:flutter/material.dart';
+
 import '../data/auth_repository.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -39,9 +39,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Registration failed: $e')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Registration failed: $e')));
     }
 
     if (mounted) {
@@ -95,9 +94,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: loading ? null : register,
-                child: Text(
-                  loading ? 'Please wait...' : 'Create Account',
-                ),
+                child: Text(loading ? 'Please wait...' : 'Create Account'),
               ),
             ),
           ],
