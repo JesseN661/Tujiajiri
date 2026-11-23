@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 
+import 'app/role_gate.dart';
+import 'core/session/role_repository.dart';
 import 'features/applications/data/repositories/firestore_application_repository.dart';
 import 'features/applications/domain/usecases/submit_application.dart';
 import 'features/applications/domain/usecases/update_application_status.dart';
@@ -12,7 +14,6 @@ import 'features/applications/domain/usecases/withdraw_application.dart';
 import 'features/applications/presentation/bloc/applications_cubit.dart';
 import 'features/applications/presentation/bloc/employer_applications_cubit.dart';
 import 'features/auth/presentation/login_screen.dart';
-import 'features/jobs/presentation/jobs_screen.dart';
 import 'features/jobs/state/job_search_controller.dart';
 import 'firebase_options.dart';
 
@@ -88,8 +89,12 @@ class AuthGate extends StatelessWidget {
           );
         }
 
-        if (snapshot.hasData) {
-          return const JobsScreen();
+        final user = snapshot.data;
+        if (user != null) {
+          return RoleGate(
+            uid: user.uid,
+            roles: RoleRepository(FirebaseFirestore.instance),
+          );
         }
 
         return const LoginScreen();
