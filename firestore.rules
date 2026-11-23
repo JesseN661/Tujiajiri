@@ -1,8 +1,7 @@
 rules_version = '2';
 
-// Tujiajiri security rules.
-// Roles live in users/{uid}.role: "seeker" (default), "employer" or "admin".
-// Anything not explicitly allowed below is denied.
+// Roles: users/{uid}.role = seeker (default), employer or admin.
+// Anything not allowed below is denied.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -81,8 +80,7 @@ service cloud.firestore {
     // ---------- applications ----------
     // Document ID = {jobId}_{applicantId}.
     match /applications/{applicationId} {
-      // The applicant can check whether their own application exists (even before
-      // it is created), and the job's employer can open it.
+      // The applicant (even before applying) or the job's employer.
       allow get: if signedIn()
         && (applicationId.matches('^.+_' + uid() + '$')
             || (resource != null
@@ -90,14 +88,13 @@ service cloud.firestore {
                     || resource.data.employerId == uid()
                     || isAdmin())));
 
-      // Lists must be filtered to the caller: their own applications or their jobs'.
+      // Only your own applications, or those sent to you.
       allow list: if signedIn()
         && (resource.data.applicantId == uid()
             || resource.data.employerId == uid()
             || isAdmin());
 
-      // Apply: only for yourself, once per job, starting as "submitted",
-      // to a published job, naming that job's real employer.
+      // Apply once, as yourself, to a published job.
       allow create: if signedIn()
         && request.resource.data.applicantId == uid()
         && applicationId == request.resource.data.jobId + '_' + uid()
@@ -112,15 +109,14 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/jobs/$(request.resource.data.jobId)).data.employerId
              == request.resource.data.employerId;
 
-      // Status changes: only the job's employer (or an admin), only status and
-      // updatedAt, only forward from an open status to a new one.
+      // Only the employer changes the status, and only forward.
       allow update: if (isAdmin() || (signedIn() && resource.data.employerId == uid()))
         && changedKeys().hasOnly(['status', 'updatedAt'])
         && resource.data.status in ['submitted', 'underReview']
         && request.resource.data.status in ['underReview', 'accepted', 'rejected']
         && request.resource.data.status != resource.data.status;
 
-      // Withdraw: only the applicant, only while the application is still open.
+      // Withdraw your own open application.
       allow delete: if signedIn()
         && resource.data.applicantId == uid()
         && resource.data.status in ['submitted', 'underReview'];

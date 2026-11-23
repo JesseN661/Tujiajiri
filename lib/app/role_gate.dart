@@ -5,10 +5,7 @@ import '../core/session/role_repository.dart';
 import '../core/session/user_role.dart';
 import 'destinations.dart';
 
-/// Loads the signed-in user's role and shows the matching tabs.
-///
-/// If the role cannot be read (no profile yet, offline, or denied by the
-/// rules), the user is shown the seeker tabs, the safest default.
+/// Shows the tabs for the user's role (seeker if unknown).
 class RoleGate extends StatelessWidget {
   const RoleGate({super.key, required this.uid, required this.roles});
 
@@ -27,7 +24,7 @@ class RoleGate extends StatelessWidget {
         }
 
         final role = snapshot.data ?? UserRole.seeker;
-        // A new key resets the selected tab when the role changes.
+        // New role: start again on the first tab.
         return HomeShell(
           key: ValueKey(role),
           destinations: destinationsFor(role),
