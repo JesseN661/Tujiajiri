@@ -13,13 +13,12 @@ import 'applications_state.dart';
 
 class ApplicationsCubit extends Cubit<ApplicationsState> {
   ApplicationsCubit({
-    required ApplicationRepository repository,
+    required this._repository,
     required SubmitApplication submitApplication,
     required UpdateApplicationStatus updateApplicationStatus,
     required WithdrawApplication withdrawApplication,
     required this.currentUserId,
-  }) : _repository = repository,
-       _submit = submitApplication,
+  }) : _submit = submitApplication,
        _updateStatus = updateApplicationStatus,
        _withdraw = withdrawApplication,
        super(const ApplicationsState());
