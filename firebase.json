@@ -1,1 +1,27 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"tujiajiri-80112","appId":"1:525297233532:android:44c0daaa1f42899735a3f9","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"tujiajiri-80112","configurations":{"android":"1:525297233532:android:44c0daaa1f42899735a3f9","ios":"1:525297233532:ios:ba716d684297c79335a3f9","web":"1:525297233532:web:58c79eec130a898735a3f9","windows":"1:525297233532:web:cbe7373648d27a0b35a3f9"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "tujiajiri-80112",
+          "appId": "1:525297233532:android:44c0daaa1f42899735a3f9",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "tujiajiri-80112",
+          "configurations": {
+            "android": "1:525297233532:android:44c0daaa1f42899735a3f9",
+            "ios": "1:525297233532:ios:ba716d684297c79335a3f9",
+            "web": "1:525297233532:web:58c79eec130a898735a3f9",
+            "windows": "1:525297233532:web:cbe7373648d27a0b35a3f9"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}
