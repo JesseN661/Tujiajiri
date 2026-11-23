@@ -10,10 +10,10 @@ It runs on Android (physical device or emulator) and uses Firebase Authenticatio
 |---|---|
 | Jobs | Browse published jobs, search by keyword, skill or location, filter by employment type, see a **Verified employer** badge, open job details |
 | Applications | Apply with a cover letter, track each application (Submitted → Under Review → Accepted / Rejected) live, withdraw an open application |
-| Employers | Review received applications and update their status from the **Applicants** tab |
+| Employers | Post, edit and delete their own jobs; review received applications and update their status from the **Applicants** tab |
 | Profile & skills | Edit personal details, education, experience, skills and interests |
 | Preferences | Theme, job sorting and notification settings, kept after the app restarts |
-| Accounts | Register, log in and stay logged in after a restart |
+| Accounts | Register and log in with email/password or Google, verify the email, reset a password, log out, and stay logged in after a restart |
 
 After sign-in, the app shows tabs for the user's role: **seekers** see Jobs · Tracker · Skills · Profile, and **employers/admins** see Jobs · Applicants · Profile.
 
@@ -74,7 +74,7 @@ firebase deploy --only firestore:rules
 
 **Roles.** A user's role is the `role` field of `users/{uid}`: `seeker` (default), `employer` or `admin`. Users cannot change their own role; set employer and admin roles in the Firebase console.
 
-**Sample job.** Jobs appear in the app when `status` is `published`. Add one in **Firestore → jobs → Add document**:
+**Sample job.** Employers post jobs from the **Post a job** button on the Jobs tab. To add one by hand instead, use **Firestore → jobs → Add document** (jobs appear in the app when `status` is `published`):
 
 ```json
 {
@@ -130,8 +130,8 @@ lib/
     │   ├── domain/           #   Entities, repository interface, use cases
     │   └── presentation/     #   Cubits, pages, widgets
     ├── auth/                 # Registration and login
-    ├── jobs/                 # Job listings, search, details
-    └── profile/              # Profile, skills, preferences
+    ├── jobs/                 # Job listings, search, details, post and edit jobs
+    └── profile/              # Onboarding, profile, skills, preferences
 ```
 
 **Conventions**

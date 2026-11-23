@@ -43,6 +43,24 @@ void main() {
     expect(await repository.getProfile('u1'), isNull);
   });
 
+  test('saveSkills stores skills and interests on the user', () async {
+    await repository.saveOnboarding(
+      profile: _profile,
+      education: const [],
+      experience: const [],
+    );
+    await repository.saveSkills(
+      'u1',
+      skills: ['Excel', 'Kinyarwanda'],
+      interests: ['Sales'],
+    );
+
+    final profile = await repository.getProfile('u1');
+    expect(profile?.skills, ['Excel', 'Kinyarwanda']);
+    expect(profile?.interests, ['Sales']);
+    expect(profile?.fullName, 'Amina Uwase');
+  });
+
   test('saveOnboarding writes the user document with the uid as id', () async {
     await repository.saveOnboarding(
       profile: _profile,

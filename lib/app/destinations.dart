@@ -41,13 +41,13 @@ List<AppDestination> seekerDestinations() => [
   ),
 ];
 
-/// Employers and admins: browse jobs, review applicants, manage profile.
+/// Employers and admins: post and browse jobs, review applicants, manage profile.
 List<AppDestination> employerDestinations() => [
   AppDestination(
     label: 'Jobs',
     icon: Icons.work_outline,
     selectedIcon: Icons.work,
-    builder: (_) => const JobsScreen(),
+    builder: (_) => const JobsScreen(canPostJobs: true),
   ),
   AppDestination(
     label: 'Applicants',

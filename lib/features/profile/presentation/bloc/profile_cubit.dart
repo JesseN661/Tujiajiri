@@ -11,10 +11,8 @@ import 'profile_state.dart';
 
 /// Live view of the signed-in user's profile, with edit, add and delete.
 class ProfileCubit extends Cubit<ProfileState> {
-  ProfileCubit({required UserProfileRepository repository, required String uid})
-    : _repository = repository,
-      _uid = uid,
-      super(const ProfileState());
+  ProfileCubit({required this._repository, required this._uid})
+    : super(const ProfileState());
 
   final UserProfileRepository _repository;
   final String _uid;

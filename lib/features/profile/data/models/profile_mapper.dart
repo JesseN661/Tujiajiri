@@ -20,6 +20,8 @@ class ProfileMapper {
       phone: data['phone'] as String? ?? '',
       location: data['location'] as String? ?? '',
       onboardingComplete: data['onboardingComplete'] as bool? ?? false,
+      skills: List<String>.from(data['skills'] ?? const <String>[]),
+      interests: List<String>.from(data['interests'] ?? const <String>[]),
     );
   }
 

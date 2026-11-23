@@ -18,7 +18,7 @@ import 'features/applications/presentation/bloc/employer_applications_cubit.dart
 import 'features/auth/data/firebase_auth_repository.dart';
 import 'features/auth/domain/repositories/auth_repository.dart';
 import 'features/auth/presentation/bloc/auth_cubit.dart';
-import 'features/jobs/state/job_search_controller.dart';
+import 'features/jobs/presentation/state/job_search_controller.dart';
 import 'features/profile/data/firestore_user_profile_repository.dart';
 import 'features/profile/domain/repositories/user_profile_repository.dart';
 import 'firebase_options.dart';

@@ -1,17 +1,86 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/presentation/snackbars.dart';
 import '../../applications/presentation/pages/apply_page.dart';
-import '../models/job.dart';
+import '../../auth/presentation/bloc/auth_cubit.dart';
+import '../data/job_repository.dart';
+import '../domain/entities/job.dart';
+import 'job_form_screen.dart';
 
 class JobDetailsScreen extends StatelessWidget {
   final Job job;
+  final JobRepository? repository;
 
-  const JobDetailsScreen({super.key, required this.job});
+  const JobDetailsScreen({super.key, required this.job, this.repository});
+
+  void _edit(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => JobFormScreen(
+          job: job,
+          employerId: job.employerId,
+          employerName: job.employerName,
+          repository: repository,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _delete(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete this job?'),
+        content: const Text('Seekers will no longer see it.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    try {
+      await (repository ?? JobRepository()).deleteJob(job.id);
+      if (!context.mounted) return;
+      context.showMessage('Job deleted.');
+      Navigator.pop(context);
+    } catch (error) {
+      if (context.mounted) context.showError(error);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final uid = context.read<AuthCubit>().state.user?.uid;
+    final isOwner = uid != null && uid == job.employerId;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Job Details')),
+      appBar: AppBar(
+        title: const Text('Job Details'),
+        actions: [
+          if (isOwner) ...[
+            IconButton(
+              tooltip: 'Edit job',
+              icon: const Icon(Icons.edit_outlined),
+              onPressed: () => _edit(context),
+            ),
+            IconButton(
+              tooltip: 'Delete job',
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () => _delete(context),
+            ),
+          ],
+        ],
+      ),
       body: Column(
         children: [
           Expanded(
@@ -88,31 +157,32 @@ class JobDetailsScreen extends StatelessWidget {
             ),
           ),
 
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => ApplyPage(
-                          jobId: job.id,
-                          jobTitle: job.title,
-                          employerId: job.employerId,
-                          employerName: job.employerName,
+          if (!isOwner)
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => ApplyPage(
+                            jobId: job.id,
+                            jobTitle: job.title,
+                            employerId: job.employerId,
+                            employerName: job.employerName,
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.send_outlined),
-                  label: const Text('Apply Now'),
+                      );
+                    },
+                    icon: const Icon(Icons.send_outlined),
+                    label: const Text('Apply Now'),
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );
