@@ -1,3 +1,4 @@
+import '../../auth/presentation/bloc/auth_cubit.dart';
 import '../../profile/presentation/profile_screen.dart';
 
 import 'package:flutter/material.dart';
@@ -61,6 +62,11 @@ class _JobsScreenState extends State<JobsScreen> {
                 MaterialPageRoute(builder: (context) => const ProfileScreen()),
               );
             },
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Log out',
+            onPressed: () => context.read<AuthCubit>().signOut(),
           ),
           if (searchQuery.isNotEmpty || selectedType != 'All')
             IconButton(
