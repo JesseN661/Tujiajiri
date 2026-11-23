@@ -1,0 +1,129 @@
+rules_version = '2';
+
+// Tujiajiri security rules.
+// Roles live in users/{uid}.role: "seeker" (default), "employer" or "admin".
+// Anything not explicitly allowed below is denied.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- helpers ----------
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function uid() {
+      return request.auth.uid;
+    }
+
+    function userPath(id) {
+      return /databases/$(database)/documents/users/$(id);
+    }
+
+    function role() {
+      return exists(userPath(uid()))
+        ? get(userPath(uid())).data.get('role', 'seeker')
+        : 'seeker';
+    }
+
+    function isAdmin() {
+      return signedIn() && role() == 'admin';
+    }
+
+    function isEmployer() {
+      return signedIn() && role() == 'employer';
+    }
+
+    // Fields that an update changes.
+    function changedKeys() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    // ---------- users ----------
+    // A profile is private to its owner (and admins).
+    match /users/{userId} {
+      allow read: if signedIn() && (uid() == userId || isAdmin());
+
+      // Registration: you may create only your own profile, as a seeker or an employer.
+      allow create: if signedIn() && uid() == userId
+        && request.resource.data.get('role', 'seeker') in ['seeker', 'employer'];
+
+      // You may edit your own profile but not your role; admins may change anything.
+      allow update: if isAdmin()
+        || (signedIn() && uid() == userId && !changedKeys().hasAny(['role']));
+
+      allow delete: if signedIn() && (uid() == userId || isAdmin());
+    }
+
+    // ---------- jobs ----------
+    match /jobs/{jobId} {
+      // Signed-in users see published jobs; employers also see their own drafts.
+      allow read: if signedIn()
+        && (resource.data.status == 'published'
+            || resource.data.employerId == uid()
+            || isAdmin());
+
+      // Employers post jobs under their own id and cannot self-verify.
+      allow create: if isAdmin()
+        || (isEmployer()
+            && request.resource.data.employerId == uid()
+            && request.resource.data.get('isVerified', false) == false);
+
+      // Employers edit their own jobs but not the owner or the verified badge.
+      allow update: if isAdmin()
+        || (isEmployer()
+            && resource.data.employerId == uid()
+            && !changedKeys().hasAny(['employerId', 'isVerified']));
+
+      allow delete: if isAdmin()
+        || (isEmployer() && resource.data.employerId == uid());
+    }
+
+    // ---------- applications ----------
+    // Document ID = {jobId}_{applicantId}.
+    match /applications/{applicationId} {
+      // The applicant can check whether their own application exists (even before
+      // it is created), and the job's employer can open it.
+      allow get: if signedIn()
+        && (applicationId.matches('^.+_' + uid() + '$')
+            || (resource != null
+                && (resource.data.applicantId == uid()
+                    || resource.data.employerId == uid()
+                    || isAdmin())));
+
+      // Lists must be filtered to the caller: their own applications or their jobs'.
+      allow list: if signedIn()
+        && (resource.data.applicantId == uid()
+            || resource.data.employerId == uid()
+            || isAdmin());
+
+      // Apply: only for yourself, once per job, starting as "submitted",
+      // to a published job, naming that job's real employer.
+      allow create: if signedIn()
+        && request.resource.data.applicantId == uid()
+        && applicationId == request.resource.data.jobId + '_' + uid()
+        && request.resource.data.status == 'submitted'
+        && request.resource.data.keys().hasOnly([
+             'jobId', 'applicantId', 'employerId', 'status', 'appliedAt',
+             'updatedAt', 'coverLetter', 'jobTitle', 'employerName'])
+        && request.resource.data.coverLetter is string
+        && request.resource.data.coverLetter.size() <= 1000
+        && exists(/databases/$(database)/documents/jobs/$(request.resource.data.jobId))
+        && get(/databases/$(database)/documents/jobs/$(request.resource.data.jobId)).data.status == 'published'
+        && get(/databases/$(database)/documents/jobs/$(request.resource.data.jobId)).data.employerId
+             == request.resource.data.employerId;
+
+      // Status changes: only the job's employer (or an admin), only status and
+      // updatedAt, only forward from an open status to a new one.
+      allow update: if (isAdmin() || (signedIn() && resource.data.employerId == uid()))
+        && changedKeys().hasOnly(['status', 'updatedAt'])
+        && resource.data.status in ['submitted', 'underReview']
+        && request.resource.data.status in ['underReview', 'accepted', 'rejected']
+        && request.resource.data.status != resource.data.status;
+
+      // Withdraw: only the applicant, only while the application is still open.
+      allow delete: if signedIn()
+        && resource.data.applicantId == uid()
+        && resource.data.status in ['submitted', 'underReview'];
+    }
+  }
+}
