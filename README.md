@@ -144,6 +144,6 @@ lib/
 
 | Jobs | Job details | Tracker | Applicants | Profile |
 |---|---|---|---|---|
-| _to add_ | _to add_ | _to add_ | _to add_ | _to add_ |
+| <img src="docs/screenshots/jobs.png" width="180" alt="Jobs"> | <img src="docs/screenshots/job_details.png" width="180" alt="Job details"> | <img src="docs/screenshots/tracker.png" width="180" alt="Tracker"> | <img src="docs/screenshots/applicants.png" width="180" alt="Applicants"> | <img src="docs/screenshots/profile.png" width="180" alt="Profile"> |
 
-Save screenshots in `docs/screenshots/` and replace the cells above with `![Jobs](docs/screenshots/jobs.png)`.
+Screenshots show sample data on a 375 × 667 phone screen.
