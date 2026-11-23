@@ -1,21 +1,23 @@
 rules_version = '2';
 
-// Roles: users/{uid}.role = seeker (default), employer or admin.
-// Anything not allowed below is denied.
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ---------- helpers ----------
     function signedIn() {
       return request.auth != null;
+    }
+
+    function verified() {
+      return signedIn()
+        && request.auth.token.email_verified == true;
     }
 
     function uid() {
       return request.auth.uid;
     }
 
-    function userPath(id) {
-      return /databases/$(database)/documents/users/$(id);
+    function userPath(userId) {
+      return /databases/$(database)/documents/users/$(userId);
     }
 
     function role() {
@@ -32,92 +34,228 @@ service cloud.firestore {
       return signedIn() && role() == 'employer';
     }
 
-    // Fields that an update changes.
+    function isOwner(userId) {
+      return verified() && uid() == userId;
+    }
+
+    function validText(value, min, max) {
+      return value is string
+        && value.size() >= min
+        && value.size() <= max;
+    }
+
+    function validYear(value) {
+      return value is int && value >= 1950 && value <= 2100;
+    }
+
+    function validEndYear(data) {
+      return data.endYear == null
+        || (
+          validYear(data.endYear)
+          && data.endYear >= data.startYear
+        );
+    }
+
     function changedKeys() {
       return request.resource.data.diff(resource.data).affectedKeys();
     }
 
-    // ---------- users ----------
-    // A profile is private to its owner (and admins).
+    function validProfile(data) {
+      return data.keys().hasAll([
+          'fullName',
+          'email',
+          'onboardingComplete'
+        ])
+        && validText(data.fullName, 2, 60)
+        && validText(data.email, 3, 254)
+        && data.email.lower() == request.auth.token.email.lower()
+        && data.onboardingComplete is bool
+        && (!('phone' in data) || validText(data.phone, 0, 25))
+        && (!('location' in data) || validText(data.location, 0, 60));
+    }
+
+    function validEducation(data) {
+      return data.keys().hasAll([
+          'school',
+          'degree',
+          'startYear',
+          'endYear'
+        ])
+        && validText(data.school, 2, 80)
+        && validText(data.degree, 2, 80)
+        && validYear(data.startYear)
+        && validEndYear(data)
+        && (
+          !('fieldOfStudy' in data)
+          || validText(data.fieldOfStudy, 0, 80)
+        );
+    }
+
+    function validExperience(data) {
+      return data.keys().hasAll([
+          'company',
+          'role',
+          'startYear',
+          'endYear'
+        ])
+        && validText(data.company, 2, 80)
+        && validText(data.role, 2, 80)
+        && validYear(data.startYear)
+        && validEndYear(data)
+        && (
+          !('description' in data)
+          || validText(data.description, 0, 500)
+        );
+    }
+
+    // ---------- User profiles ----------
+
     match /users/{userId} {
-      allow read: if signedIn() && (uid() == userId || isAdmin());
+      allow read: if isOwner(userId) || isAdmin();
 
-      // Registration: you may create only your own profile, as a seeker or an employer.
-      allow create: if signedIn() && uid() == userId
-        && request.resource.data.get('role', 'seeker') in ['seeker', 'employer'];
+      allow create: if isOwner(userId)
+        && validProfile(request.resource.data)
+        && request.resource.data.get('role', 'seeker')
+          in ['seeker', 'employer'];
 
-      // You may edit your own profile but not your role; admins may change anything.
       allow update: if isAdmin()
-        || (signedIn() && uid() == userId && !changedKeys().hasAny(['role']));
+        || (
+          isOwner(userId)
+          && validProfile(request.resource.data)
+          && !changedKeys().hasAny(['role'])
+        );
 
-      allow delete: if signedIn() && (uid() == userId || isAdmin());
+      allow delete: if isAdmin();
+
+      match /education/{itemId} {
+        allow read, delete: if isOwner(userId);
+
+        allow create, update: if isOwner(userId)
+          && validEducation(request.resource.data);
+      }
+
+      match /experience/{itemId} {
+        allow read, delete: if isOwner(userId);
+
+        allow create, update: if isOwner(userId)
+          && validExperience(request.resource.data);
+      }
     }
 
-    // ---------- jobs ----------
+    // ---------- Jobs ----------
+
     match /jobs/{jobId} {
-      // Signed-in users see published jobs; employers also see their own drafts.
-      allow read: if signedIn()
-        && (resource.data.status == 'published'
-            || resource.data.employerId == uid()
-            || isAdmin());
+      allow get: if verified()
+        && (
+          resource == null
+          || resource.data.status == 'published'
+          || resource.data.employerId == uid()
+          || isAdmin()
+        );
 
-      // Employers post jobs under their own id and cannot self-verify.
-      allow create: if isAdmin()
-        || (isEmployer()
+      allow list: if verified()
+        && (
+          resource.data.status == 'published'
+          || resource.data.employerId == uid()
+          || isAdmin()
+        );
+
+      allow create: if verified()
+        && (
+          isAdmin()
+          || (
+            isEmployer()
             && request.resource.data.employerId == uid()
-            && request.resource.data.get('isVerified', false) == false);
+            && request.resource.data.get('isVerified', false) == false
+          )
+        );
 
-      // Employers edit their own jobs but not the owner or the verified badge.
-      allow update: if isAdmin()
-        || (isEmployer()
+      allow update: if verified()
+        && (
+          isAdmin()
+          || (
+            isEmployer()
             && resource.data.employerId == uid()
-            && !changedKeys().hasAny(['employerId', 'isVerified']));
+            && !changedKeys().hasAny(['employerId', 'isVerified'])
+          )
+        );
 
-      allow delete: if isAdmin()
-        || (isEmployer() && resource.data.employerId == uid());
+      allow delete: if verified()
+        && (
+          isAdmin()
+          || (
+            isEmployer()
+            && resource.data.employerId == uid()
+          )
+        );
     }
 
-    // ---------- applications ----------
-    // Document ID = {jobId}_{applicantId}.
+    // ---------- Job applications ----------
+
     match /applications/{applicationId} {
-      // The applicant (even before applying) or the job's employer.
-      allow get: if signedIn()
-        && (applicationId.matches('^.+_' + uid() + '$')
-            || (resource != null
-                && (resource.data.applicantId == uid()
-                    || resource.data.employerId == uid()
-                    || isAdmin())));
+      allow get: if verified()
+        && (
+          applicationId.matches('^.+_' + uid() + '$')
+          || (
+            resource != null
+            && (
+              resource.data.applicantId == uid()
+              || resource.data.employerId == uid()
+              || isAdmin()
+            )
+          )
+        );
 
-      // Only your own applications, or those sent to you.
-      allow list: if signedIn()
-        && (resource.data.applicantId == uid()
-            || resource.data.employerId == uid()
-            || isAdmin());
+      allow list: if verified()
+        && (
+          resource.data.applicantId == uid()
+          || resource.data.employerId == uid()
+          || isAdmin()
+        );
 
-      // Apply once, as yourself, to a published job.
-      allow create: if signedIn()
+      allow create: if verified()
         && request.resource.data.applicantId == uid()
-        && applicationId == request.resource.data.jobId + '_' + uid()
+        && applicationId
+          == request.resource.data.jobId + '_' + uid()
         && request.resource.data.status == 'submitted'
         && request.resource.data.keys().hasOnly([
-             'jobId', 'applicantId', 'employerId', 'status', 'appliedAt',
-             'updatedAt', 'coverLetter', 'jobTitle', 'employerName'])
+          'jobId',
+          'applicantId',
+          'employerId',
+          'status',
+          'appliedAt',
+          'updatedAt',
+          'coverLetter',
+          'jobTitle',
+          'employerName'
+        ])
         && request.resource.data.coverLetter is string
         && request.resource.data.coverLetter.size() <= 1000
-        && exists(/databases/$(database)/documents/jobs/$(request.resource.data.jobId))
-        && get(/databases/$(database)/documents/jobs/$(request.resource.data.jobId)).data.status == 'published'
-        && get(/databases/$(database)/documents/jobs/$(request.resource.data.jobId)).data.employerId
-             == request.resource.data.employerId;
+        && exists(
+          /databases/$(database)/documents/jobs/$(request.resource.data.jobId)
+        )
+        && get(
+          /databases/$(database)/documents/jobs/$(request.resource.data.jobId)
+        ).data.status == 'published'
+        && get(
+          /databases/$(database)/documents/jobs/$(request.resource.data.jobId)
+        ).data.employerId == request.resource.data.employerId;
 
-      // Only the employer changes the status, and only forward.
-      allow update: if (isAdmin() || (signedIn() && resource.data.employerId == uid()))
+      allow update: if verified()
+        && (
+          isAdmin()
+          || resource.data.employerId == uid()
+        )
         && changedKeys().hasOnly(['status', 'updatedAt'])
         && resource.data.status in ['submitted', 'underReview']
-        && request.resource.data.status in ['underReview', 'accepted', 'rejected']
+        && request.resource.data.status in [
+          'underReview',
+          'accepted',
+          'rejected'
+        ]
         && request.resource.data.status != resource.data.status;
 
-      // Withdraw your own open application.
-      allow delete: if signedIn()
+      allow delete: if verified()
         && resource.data.applicantId == uid()
         && resource.data.status in ['submitted', 'underReview'];
     }
