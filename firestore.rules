@@ -1,137 +1,262 @@
 rules_version = '2';
 
-// Everything not listed here is denied by default.
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // ---------- helpers ----------
 
     function signedIn() {
       return request.auth != null;
     }
 
-    // Email/password users must have opened the verification link first.
     function verified() {
-      return signedIn() && request.auth.token.email_verified == true;
+      return signedIn()
+        && request.auth.token.email_verified == true;
     }
 
-    function isOwner(uid) {
-      return verified() && request.auth.uid == uid;
+    function uid() {
+      return request.auth.uid;
+    }
+
+    function userPath(userId) {
+      return /databases/$(database)/documents/users/$(userId);
+    }
+
+    function role() {
+      return exists(userPath(uid()))
+        ? get(userPath(uid())).data.get('role', 'seeker')
+        : 'seeker';
+    }
+
+    function isAdmin() {
+      return signedIn() && role() == 'admin';
+    }
+
+    function isEmployer() {
+      return signedIn() && role() == 'employer';
+    }
+
+    function isOwner(userId) {
+      return verified() && uid() == userId;
     }
 
     function validText(value, min, max) {
-      return value is string && value.size() >= min && value.size() <= max;
+      return value is string
+        && value.size() >= min
+        && value.size() <= max;
     }
 
     function validYear(value) {
       return value is int && value >= 1950 && value <= 2100;
     }
 
-    // End year may be null (still ongoing) but never before the start year.
-    function validEndYear(d) {
-      return d.endYear == null
-        || (validYear(d.endYear) && d.endYear >= d.startYear);
+    function validEndYear(data) {
+      return data.endYear == null
+        || (
+          validYear(data.endYear)
+          && data.endYear >= data.startYear
+        );
     }
 
-    // ---------- users: only the owner can read or write ----------
-
-    function validProfile(d) {
-      return d.keys().hasAll(['fullName', 'email', 'onboardingComplete'])
-        && validText(d.fullName, 2, 60)
-        && validText(d.email, 3, 254)
-        && d.email.lower() == request.auth.token.email.lower()
-        && d.onboardingComplete is bool
-        && (!('phone' in d) || validText(d.phone, 0, 25))
-        && (!('location' in d) || validText(d.location, 0, 60));
+    function changedKeys() {
+      return request.resource.data.diff(resource.data).affectedKeys();
     }
 
-    function validEducation(d) {
-      return d.keys().hasAll(['school', 'degree', 'startYear', 'endYear'])
-        && validText(d.school, 2, 80)
-        && validText(d.degree, 2, 80)
-        && validYear(d.startYear)
-        && validEndYear(d)
-        && (!('fieldOfStudy' in d) || validText(d.fieldOfStudy, 0, 80));
+    function validProfile(data) {
+      return data.keys().hasAll([
+          'fullName',
+          'email',
+          'onboardingComplete'
+        ])
+        && validText(data.fullName, 2, 60)
+        && validText(data.email, 3, 254)
+        && data.email.lower() == request.auth.token.email.lower()
+        && data.onboardingComplete is bool
+        && (!('phone' in data) || validText(data.phone, 0, 25))
+        && (!('location' in data) || validText(data.location, 0, 60));
     }
 
-    function validExperience(d) {
-      return d.keys().hasAll(['company', 'role', 'startYear', 'endYear'])
-        && validText(d.company, 2, 80)
-        && validText(d.role, 2, 80)
-        && validYear(d.startYear)
-        && validEndYear(d)
-        && (!('description' in d) || validText(d.description, 0, 500));
+    function validEducation(data) {
+      return data.keys().hasAll([
+          'school',
+          'degree',
+          'startYear',
+          'endYear'
+        ])
+        && validText(data.school, 2, 80)
+        && validText(data.degree, 2, 80)
+        && validYear(data.startYear)
+        && validEndYear(data)
+        && (
+          !('fieldOfStudy' in data)
+          || validText(data.fieldOfStudy, 0, 80)
+        );
     }
 
-    match /users/{uid} {
-      allow read: if isOwner(uid);
-      allow create, update: if isOwner(uid) && validProfile(request.resource.data);
-      allow delete: if false;
+    function validExperience(data) {
+      return data.keys().hasAll([
+          'company',
+          'role',
+          'startYear',
+          'endYear'
+        ])
+        && validText(data.company, 2, 80)
+        && validText(data.role, 2, 80)
+        && validYear(data.startYear)
+        && validEndYear(data)
+        && (
+          !('description' in data)
+          || validText(data.description, 0, 500)
+        );
+    }
+
+    // ---------- User profiles ----------
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+
+      allow create: if isOwner(userId)
+        && validProfile(request.resource.data)
+        && request.resource.data.get('role', 'seeker')
+          in ['seeker', 'employer'];
+
+      allow update: if isAdmin()
+        || (
+          isOwner(userId)
+          && validProfile(request.resource.data)
+          && !changedKeys().hasAny(['role'])
+        );
+
+      allow delete: if isAdmin();
 
       match /education/{itemId} {
-        allow read, delete: if isOwner(uid);
-        allow create, update: if isOwner(uid)
+        allow read, delete: if isOwner(userId);
+
+        allow create, update: if isOwner(userId)
           && validEducation(request.resource.data);
       }
 
       match /experience/{itemId} {
-        allow read, delete: if isOwner(uid);
-        allow create, update: if isOwner(uid)
+        allow read, delete: if isOwner(userId);
+
+        allow create, update: if isOwner(userId)
           && validExperience(request.resource.data);
       }
     }
 
-    // ---------- jobs: everyone signed in reads published jobs ----------
+    // ---------- Jobs ----------
 
     match /jobs/{jobId} {
       allow get: if verified()
-        && (resource == null
+        && (
+          resource == null
           || resource.data.status == 'published'
-          || resource.data.employerId == request.auth.uid);
+          || resource.data.employerId == uid()
+          || isAdmin()
+        );
+
       allow list: if verified()
-        && (resource.data.status == 'published'
-          || resource.data.employerId == request.auth.uid);
+        && (
+          resource.data.status == 'published'
+          || resource.data.employerId == uid()
+          || isAdmin()
+        );
 
-      // Only the employer who owns a job can create, change or delete it.
       allow create: if verified()
-        && request.resource.data.employerId == request.auth.uid;
-      allow update, delete: if verified()
-        && resource.data.employerId == request.auth.uid;
+        && (
+          isAdmin()
+          || (
+            isEmployer()
+            && request.resource.data.employerId == uid()
+            && request.resource.data.get('isVerified', false) == false
+          )
+        );
+
+      allow update: if verified()
+        && (
+          isAdmin()
+          || (
+            isEmployer()
+            && resource.data.employerId == uid()
+            && !changedKeys().hasAny(['employerId', 'isVerified'])
+          )
+        );
+
+      allow delete: if verified()
+        && (
+          isAdmin()
+          || (
+            isEmployer()
+            && resource.data.employerId == uid()
+          )
+        );
     }
 
-    // ---------- applications: only the applicant and the employer ----------
-
-    function isParty(d) {
-      return d.applicantId == request.auth.uid
-        || d.employerId == request.auth.uid;
-    }
+    // ---------- Job applications ----------
 
     match /applications/{applicationId} {
-      allow get: if verified() && (resource == null || isParty(resource.data));
-      allow list: if verified() && isParty(resource.data);
+      allow get: if verified()
+        && (
+          applicationId.matches('^.+_' + uid() + '$')
+          || (
+            resource != null
+            && (
+              resource.data.applicantId == uid()
+              || resource.data.employerId == uid()
+              || isAdmin()
+            )
+          )
+        );
 
-      // An applicant creates their own application for a real job, and the
-      // employer on it must be the job's real owner.
+      allow list: if verified()
+        && (
+          resource.data.applicantId == uid()
+          || resource.data.employerId == uid()
+          || isAdmin()
+        );
+
       allow create: if verified()
-        && request.resource.data.applicantId == request.auth.uid
-        && applicationId ==
-          request.resource.data.jobId + '_' + request.auth.uid
+        && request.resource.data.applicantId == uid()
+        && applicationId
+          == request.resource.data.jobId + '_' + uid()
         && request.resource.data.status == 'submitted'
+        && request.resource.data.keys().hasOnly([
+          'jobId',
+          'applicantId',
+          'employerId',
+          'status',
+          'appliedAt',
+          'updatedAt',
+          'coverLetter',
+          'jobTitle',
+          'employerName'
+        ])
+        && request.resource.data.coverLetter is string
         && request.resource.data.coverLetter.size() <= 1000
-        && get(/databases/$(database)/documents/jobs/$(request.resource.data.jobId))
-          .data.employerId == request.resource.data.employerId;
+        && exists(
+          /databases/$(database)/documents/jobs/$(request.resource.data.jobId)
+        )
+        && get(
+          /databases/$(database)/documents/jobs/$(request.resource.data.jobId)
+        ).data.status == 'published'
+        && get(
+          /databases/$(database)/documents/jobs/$(request.resource.data.jobId)
+        ).data.employerId == request.resource.data.employerId;
 
-      // Only the employer changes the status, and nothing else.
       allow update: if verified()
-        && resource.data.employerId == request.auth.uid
+        && (
+          isAdmin()
+          || resource.data.employerId == uid()
+        )
+        && changedKeys().hasOnly(['status', 'updatedAt'])
         && resource.data.status in ['submitted', 'underReview']
-        && request.resource.data.status in ['underReview', 'accepted', 'rejected']
-        && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['status', 'updatedAt']);
+        && request.resource.data.status in [
+          'underReview',
+          'accepted',
+          'rejected'
+        ]
+        && request.resource.data.status != resource.data.status;
 
-      // The applicant can withdraw until a decision is made.
       allow delete: if verified()
-        && resource.data.applicantId == request.auth.uid
+        && resource.data.applicantId == uid()
         && resource.data.status in ['submitted', 'underReview'];
     }
   }

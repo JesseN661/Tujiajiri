@@ -1,7 +1,7 @@
-class ApplicationFailure implements Exception {
-  const ApplicationFailure(this.message);
-  final String message;
+import 'package:tujiajiri/core/error/failure.dart';
 
-  @override
-  String toString() => message;
+/// An expected error in the applications feature, such as a duplicate
+/// application or an invalid status change.
+class ApplicationFailure extends Failure {
+  const ApplicationFailure(super.message);
 }

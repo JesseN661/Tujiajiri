@@ -1,11 +1,13 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart' show ChangeNotifierProvider;
 
 import 'app/auth_gate.dart';
+import 'app/role_gate.dart';
+import 'core/session/role_repository.dart';
 import 'features/applications/data/repositories/firestore_application_repository.dart';
 import 'features/applications/domain/repositories/application_repository.dart';
 import 'features/applications/domain/usecases/submit_application.dart';
@@ -16,7 +18,6 @@ import 'features/applications/presentation/bloc/employer_applications_cubit.dart
 import 'features/auth/data/firebase_auth_repository.dart';
 import 'features/auth/domain/repositories/auth_repository.dart';
 import 'features/auth/presentation/bloc/auth_cubit.dart';
-import 'features/jobs/presentation/jobs_screen.dart';
 import 'features/jobs/state/job_search_controller.dart';
 import 'features/profile/data/firestore_user_profile_repository.dart';
 import 'features/profile/domain/repositories/user_profile_repository.dart';
@@ -46,7 +47,6 @@ class TujiajiriApp extends StatelessWidget {
     required this.applicationRepository,
   });
 
-  // Passed in (not created here) so tests can use fakes instead of Firebase.
   final AuthRepository authRepository;
   final UserProfileRepository profileRepository;
   final ApplicationRepository applicationRepository;
@@ -60,7 +60,6 @@ class TujiajiriApp extends StatelessWidget {
           BlocProvider<AuthCubit>(
             create: (_) => AuthCubit(repository: authRepository),
           ),
-          // Applications cubits (Jesse's feature) are provided app-wide.
           BlocProvider<ApplicationsCubit>(
             create: (_) => ApplicationsCubit(
               repository: applicationRepository,
@@ -93,7 +92,22 @@ class TujiajiriApp extends StatelessWidget {
               ),
               useMaterial3: true,
             ),
-            home: AuthGate(homeBuilder: (_) => const JobsScreen()),
+            home: AuthGate(
+              homeBuilder: (_) {
+                final user = FirebaseAuth.instance.currentUser;
+
+                if (user == null) {
+                  return const Scaffold(
+                    body: Center(child: CircularProgressIndicator()),
+                  );
+                }
+
+                return RoleGate(
+                  uid: user.uid,
+                  roles: RoleRepository(FirebaseFirestore.instance),
+                );
+              },
+            ),
           ),
         ),
       ),
