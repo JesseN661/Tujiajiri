@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tujiajiri/features/applications/data/repositories/in_memory_application_repository.dart';
 import 'package:tujiajiri/features/auth/presentation/pages/login_page.dart';
 import 'package:tujiajiri/main.dart';
 
@@ -11,6 +12,7 @@ void main() {
       TujiajiriApp(
         authRepository: FakeAuthRepository(),
         profileRepository: FakeProfileRepository(),
+        applicationRepository: InMemoryApplicationRepository(),
       ),
     );
     await tester.pumpAndSettle();
